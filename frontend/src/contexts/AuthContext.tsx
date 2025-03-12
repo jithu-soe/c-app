@@ -1,34 +1,6 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-
-
-
-
 // client/src/contexts/AuthContext.tsx
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface User {
   id: string;
@@ -44,23 +16,41 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   login: () => {},
-  logout: () => {},
+  logout: () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-
+  
+  useEffect(() => {
+    // Check if user is stored in localStorage
+    const storedUser = localStorage.getItem('chat_user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse stored user', error);
+        localStorage.removeItem('chat_user');
+      }
+    }
+  }, []);
+  
   const login = (username: string) => {
-    const newUser = { id: `user-${Date.now()}`, username }; // Generate a unique ID
+    const newUser = {
+      id: uuidv4(),
+      username
+    };
     setUser(newUser);
+    localStorage.setItem('chat_user', JSON.stringify(newUser));
   };
-
+  
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('chat_user');
   };
-
+  
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       {children}
